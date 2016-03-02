@@ -9,4 +9,12 @@
         android:layout_height="wrap_content"
         android:src="@drawable/interstellargard" />
 
+    <View
+        android:id="@+id/mTractor"
+        android:background="@drawable/tractor"
+        android:layout_width="20dp"
+        android:layout_height="20dp"
+        android:translationX="200dp"
+        android:translationY="200dp"/>
+
 </FrameLayout>
