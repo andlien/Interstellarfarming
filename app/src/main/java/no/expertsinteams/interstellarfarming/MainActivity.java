@@ -59,9 +59,11 @@ public class MainActivity extends AppCompatActivity {
             }
         });
 
-        getSupportFragmentManager().beginTransaction()
-                .replace(R.id.fragment_container, StatusFragment.newInstance(new Bundle()))
-                .commit();
+        if (savedInstanceState == null) {
+            getSupportFragmentManager().beginTransaction()
+                    .replace(R.id.fragment_container, StatusFragment.newInstance(new Bundle()))
+                    .commit();
+        }
 
     }
 
