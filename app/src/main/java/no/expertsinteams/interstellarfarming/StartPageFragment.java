@@ -21,6 +21,8 @@ import java.io.StringWriter;
 import java.io.Writer;
 import java.lang.reflect.AccessibleObject;
 import java.net.Socket;
+import java.net.UnknownHostException;
+import java.util.IllegalFormatCodePointException;
 
 
 /**
@@ -30,6 +32,9 @@ public class StartPageFragment extends Fragment {
 
     private RequestQueue queue;
     private MainActivity activity;
+
+    public static final String CONNECT = "Connect to server";
+    public static final String DISCONNECT = "Disconnect from server";
 
     public static StartPageFragment newInstance(Bundle bundle) {
 
@@ -56,41 +61,28 @@ public class StartPageFragment extends Fragment {
         super.onActivityCreated(savedInstanceState);
 
         activity = (MainActivity) getActivity();
+        Socket mSocket = activity.getNetworkSocket();
 
-        Button button = (Button) getActivity().findViewById(R.id.setupConnection);
+        final Button button = (Button) getActivity().findViewById(R.id.setupConnection);
+
+        button.setText(mSocket != null && mSocket.isConnected()? DISCONNECT : CONNECT);
 
         button.setOnClickListener(new View.OnClickListener() {
             @Override
-            public void onClick(View view) {
-
-                new Thread(new Runnable() {
+            public void onClick(final View view) {
+                new MainActivity.TriggerConnectionRunner((MainActivity) getActivity(), new Runnable() {
                     @Override
                     public void run() {
-                        InputStream is = getResources().openRawResource(R.raw.test);
-                        Writer writer = new StringWriter();
-                        char[] buffer = new char[1024];
-                        try {
-                            Reader reader = new BufferedReader(new InputStreamReader(is, "UTF-8"));
-                            int n;
-                            while ((n = reader.read(buffer)) != -1) {
-                                writer.write(buffer, 0, n);
+                        button.post(new Runnable() {
+                            @Override
+                            public void run() {
+                                Socket mSocket = activity.getNetworkSocket();
+                                button.setText(mSocket != null && mSocket.isConnected()? DISCONNECT : CONNECT);
                             }
-
-                            activity.setNetworkSocket(new Socket("10.22.71.69", 9191));
-                            DataOutputStream toServer = new DataOutputStream(activity.getNetworkSocket().getOutputStream());
-                            toServer.writeBytes(writer.toString());
-
-                        } catch (IOException e) {
-                            e.printStackTrace();
-                        } finally {
-                            try {
-                                is.close();
-                            } catch (IOException e) {
-                                e.printStackTrace();
-                            }
-                        }
+                        });
                     }
-                });
+                }).start();
+
             }
         });
 

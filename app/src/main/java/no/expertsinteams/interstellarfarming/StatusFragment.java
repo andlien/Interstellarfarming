@@ -5,12 +5,19 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.support.v4.app.Fragment;
 import android.view.LayoutInflater;
-import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.FrameLayout;
 import android.widget.ImageView;
 
+import java.io.BufferedReader;
+import java.io.DataOutputStream;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.Reader;
+import java.io.StringWriter;
+import java.io.Writer;
+import java.net.Socket;
 import java.util.LinkedList;
 import java.util.Timer;
 import java.util.TimerTask;
@@ -53,8 +60,62 @@ public class StatusFragment extends Fragment {
 
         FrameLayout root = (FrameLayout) getView();
 
-        imageView = (ImageView) getActivity().findViewById(R.id.farm_image);
-        tractor = root.findViewById(R.id.mTractor);
+        final MainActivity activity = (MainActivity) getActivity();
+
+        if (activity.getNetworkSocket() == null || !activity.getNetworkSocket().isConnected()) {
+            NoConnectionDialog.newInstance(new Bundle()).show(getFragmentManager(), "TAG");
+        } else {
+            new Thread(new Runnable() {
+                @Override
+                public void run() {
+                    InputStream is = getResources().openRawResource(R.raw.send_json);
+                    Writer writer = new StringWriter();
+                    char[] buffer = new char[1024];
+                    try {
+                        Reader reader = new BufferedReader(new InputStreamReader(is, "UTF-8"));
+                        int n;
+                        while ((n = reader.read(buffer)) != -1) {
+                            writer.write(buffer, 0, n);
+                        }
+
+                        Socket mSocket = activity.getNetworkSocket();
+                        DataOutputStream toSErver = new DataOutputStream(mSocket.getOutputStream());
+                        toSErver.writeBytes(String.format(writer.toString(), "ok"));
+
+                    } catch(Exception e) {
+                        e.printStackTrace();
+                    }
+                }
+            }).start();
+        }
+
+        new Handler().postDelayed(new Runnable() {
+            @Override
+            public void run() {
+                InputStream is = getResources().openRawResource(R.raw.send_json);
+                Writer writer = new StringWriter();
+                char[] buffer = new char[1024];
+                try {
+                    Reader reader = new BufferedReader(new InputStreamReader(is, "UTF-8"));
+                    int n;
+                    while ((n = reader.read(buffer)) != -1) {
+                        writer.write(buffer, 0, n);
+                    }
+
+                    Socket mSocket = activity.getNetworkSocket();
+                    DataOutputStream toSErver = new DataOutputStream(mSocket.getOutputStream());
+                    toSErver.writeBytes(String.format(writer.toString(), "stop"));
+
+                } catch(Exception e) {
+                    e.printStackTrace();
+                }
+            }
+        }, 5000);
+
+
+
+//        imageView = (ImageView) getActivity().findViewById(R.id.farm_image);
+//        tractor = root.findViewById(R.id.mTractor);
 
 //        timer = new Timer(false);
 //        taskQueue = new LinkedList<>();
@@ -136,6 +197,6 @@ public class StatusFragment extends Fragment {
     @Override
     public void onDestroy() {
         super.onDestroy();
-        timer.cancel();
+//        timer.cancel();
     }
 }

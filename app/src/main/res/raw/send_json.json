@@ -1,0 +1,7 @@
+{
+  "name": "app",
+  "status": "%s",
+  "area": [1.0, 0.4],
+  "waypoints_x": [0.0],
+  "waypoints_y": [0.0]
+}
