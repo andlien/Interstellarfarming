@@ -22,44 +22,6 @@
             app:theme="@style/ActionBarStyle" />
 
 
-        <!--<android.support.v7.widget.GridLayout-->
-        <!--android:id="@+id/mGridView"-->
-        <!--android:layout_height="wrap_content"-->
-        <!--android:layout_width="match_parent"-->
-        <!--android:layout_below="@id/toolbar"-->
-
-        <!--app:alignmentMode="alignBounds"-->
-        <!--app:columnCount="2"-->
-        <!--app:rowOrderPreserved="false"-->
-        <!--app:useDefaultMargins="true">-->
-
-        <!--<View-->
-        <!--android:layout_width="0dp"-->
-        <!--android:layout_height="100dp"-->
-        <!--app:layout_columnWeight="1"-->
-        <!--app:layout_gravity="fill_horizontal"-->
-        <!--android:background="@android:color/holo_blue_bright" />-->
-        <!--<View-->
-        <!--android:layout_width="0dp"-->
-        <!--android:layout_height="100dp"-->
-        <!--app:layout_columnWeight="1"-->
-        <!--app:layout_gravity="fill_horizontal"-->
-        <!--android:background="@android:color/holo_red_dark" />-->
-        <!--<View-->
-        <!--android:layout_width="0dp"-->
-        <!--android:layout_height="100dp"-->
-        <!--app:layout_columnWeight="1"-->
-        <!--app:layout_gravity="fill_horizontal"-->
-        <!--android:background="@android:color/darker_gray" />-->
-        <!--<View-->
-        <!--android:layout_width="0dp"-->
-        <!--android:layout_height="100dp"-->
-        <!--app:layout_columnWeight="1"-->
-        <!--app:layout_gravity="fill_horizontal"-->
-        <!--android:background="@android:color/holo_green_dark" />-->
-
-        <!--</android.support.v7.widget.GridLayout>-->
-
         <FrameLayout
             android:id="@+id/fragment_container"
             android:layout_width="match_parent"

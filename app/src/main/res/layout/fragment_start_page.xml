@@ -1,12 +1,30 @@
-<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
+    android:orientation="vertical"
     tools:context="no.expertsinteams.interstellarfarming.StartPageFragment">
 
+
+    <ImageView
+        android:src="@drawable/interstellar_splash"
+        android:layout_width="300dp"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center_horizontal"
+        android:layout_margin="10dp"
+        android:adjustViewBounds="true" />
+
     <TextView
-        android:layout_width="match_parent"
-        android:layout_height="match_parent"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:textStyle="bold"
+        android:layout_gravity="center_horizontal"
         android:text="Welcome to your personal MyFarm(TM) monitor.\nUse the navigation drawer to find the tractor." />
 
-</FrameLayout>
+    <Button
+        android:text="Connect to server"
+        android:id="@+id/setupConnection"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content" />
+
+</LinearLayout>

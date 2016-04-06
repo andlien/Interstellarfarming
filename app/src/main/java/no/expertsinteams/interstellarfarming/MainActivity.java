@@ -12,10 +12,14 @@ import android.support.v7.widget.Toolbar;
 import android.view.Gravity;
 import android.view.MenuItem;
 
+import java.net.Socket;
+
 public class MainActivity extends AppCompatActivity {
 
 
     private GridLayout gridView;
+
+    private Socket networkSocket;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -61,7 +65,7 @@ public class MainActivity extends AppCompatActivity {
 
         if (savedInstanceState == null) {
             getSupportFragmentManager().beginTransaction()
-                    .replace(R.id.fragment_container, StatusFragment.newInstance(new Bundle()))
+                    .replace(R.id.fragment_container, StartPageFragment.newInstance(new Bundle()))
                     .commit();
         }
 
@@ -86,4 +90,11 @@ public class MainActivity extends AppCompatActivity {
         }.start();
     }
 
+    public void setNetworkSocket(Socket networkSocket) {
+        this.networkSocket = networkSocket;
+    }
+
+    public Socket getNetworkSocket() {
+        return networkSocket;
+    }
 }
