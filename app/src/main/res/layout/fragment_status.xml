@@ -6,17 +6,21 @@
     tools:context="no.expertsinteams.interstellarfarming.StatusFragment">
 
     <LinearLayout
+        android:layout_gravity="center_horizontal"
         android:layout_width="match_parent"
         android:layout_height="wrap_content">
 
         <Button
-            android:layout_gravity="center_horizontal"
             android:id="@+id/stopOrResume"
+            android:visibility="gone"
+            android:tag="RUNNING"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content" />
 
         <Button
             android:id="@+id/abort"
+            android:visibility="gone"
+            android:tag="RUNNING"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content" />
 
@@ -31,8 +35,16 @@
         android:layout_gravity="center" />
     <View
         android:id="@+id/mTractor"
+        android:visibility="gone"
         android:background="@drawable/tractor"
         android:layout_width="20dp"
         android:layout_height="20dp"/>
+
+    <ProgressBar
+        android:visibility="gone"
+        style="@style/Widget.AppCompat.ProgressBar.Horizontal"
+        android:id="@+id/show_progress"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content" />
 
 </FrameLayout>

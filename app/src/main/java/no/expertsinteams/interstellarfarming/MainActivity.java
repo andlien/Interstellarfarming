@@ -2,6 +2,7 @@ package no.expertsinteams.interstellarfarming;
 
 import android.os.Bundle;
 import android.os.CountDownTimer;
+import android.os.Handler;
 import android.support.design.widget.NavigationView;
 import android.support.design.widget.Snackbar;
 import android.support.v4.widget.DrawerLayout;
@@ -11,6 +12,8 @@ import android.support.v7.widget.GridLayout;
 import android.support.v7.widget.Toolbar;
 import android.view.Gravity;
 import android.view.MenuItem;
+
+import com.google.gson.Gson;
 
 import java.io.BufferedReader;
 import java.io.DataOutputStream;
@@ -27,14 +30,17 @@ import java.net.UnknownHostException;
 
 public class MainActivity extends AppCompatActivity {
 
-    public static final String IP = "10.22.71.69";
+    public static final String IP = "10.22.68.50";
     public static final int PORT = 9191;
+
+    public static final String MODULE_NAME = "app";
 
     public static final String MSG_CLOSE = "closed";
     public static final String MSG_START = "start";
     public static final String MSG_ABORT = "abort";
     public static final String MSG_RESUME = "resume";
     public static final String MSG_STOP = "stop";
+    public static final String MSG_STATUS = "getstatus";
 
     private GridLayout gridView;
 
@@ -56,7 +62,8 @@ public class MainActivity extends AppCompatActivity {
         setSupportActionBar(toolbar);
 
         ActionBarDrawerToggle mDrawerToggle = new ActionBarDrawerToggle(this, mDrawer, toolbar, 0, 0);
-        mDrawer.setDrawerListener(mDrawerToggle);
+        assert mDrawer != null;
+        mDrawer.addDrawerListener(mDrawerToggle);
 
         getSupportActionBar().setHomeButtonEnabled(true);
         mDrawerToggle.syncState();
@@ -99,25 +106,6 @@ public class MainActivity extends AppCompatActivity {
                 .commit();
     }
 
-    public void mowField(final int id) {
-
-        final Snackbar mSnack = Snackbar.make(gridView, "Mowing " + id, Snackbar.LENGTH_INDEFINITE);
-        mSnack.show();
-
-        new CountDownTimer(30000, 1000) {
-
-            @Override
-            public void onTick(long l) {
-                mSnack.setText("Mowing " + id + ", time left: " + l/1000);
-            }
-
-            @Override
-            public void onFinish() {
-                mSnack.dismiss();
-            }
-        }.start();
-    }
-
     public void setNetworkSocket(Socket networkSocket) {
         this.networkSocket = networkSocket;
     }
@@ -145,6 +133,20 @@ public class MainActivity extends AppCompatActivity {
         return writer.toString();
     }
 
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+
+        if (networkSocket != null && networkSocket.isConnected()) {
+            new TriggerConnectionRunner(this, new Runnable() {
+                @Override
+                public void run() {
+
+                }
+            }).start();
+        }
+    }
+
     public static class SendStringRunner extends Thread {
 
         private String string;
@@ -159,18 +161,63 @@ public class MainActivity extends AppCompatActivity {
         public void run() {
             DataOutputStream toServer = null;
             try {
+//                System.out.println(string);
+//                if (socket.isClosed()) {
+//                    throw new RuntimeException();
+//                }
                 toServer = new DataOutputStream(socket.getOutputStream());
                 toServer.writeBytes(string);
             } catch (IOException e) {
                 e.printStackTrace();
-            } finally {
-                try {
-                    toServer.close();
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
             }
         }
+    }
+
+    public static class RecieveStringRunner extends Thread {
+
+        private RecieveStringListener callback;
+        private Socket socket;
+
+        public RecieveStringRunner(Socket socket, RecieveStringListener callback) {
+            this.callback = callback;
+            this.socket = socket;
+        }
+
+        @Override
+        public void run() {
+            BufferedReader fromServer = null;
+            try {
+                fromServer = new BufferedReader(new InputStreamReader(socket.getInputStream()));
+
+                StringBuilder everything = new StringBuilder();
+                String line;
+                while( (line = fromServer.readLine()) != null) {
+                    everything.append(line);
+                }
+                callback.setRecieve(new Gson().fromJson(everything.toString(), JSONClass.class));
+
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+
+            callback.run();
+        }
+    }
+
+    public static abstract class RecieveStringListener implements Runnable {
+
+        private JSONClass recieve;
+
+        public JSONClass getRecieve() {
+            return recieve;
+        }
+
+        public void setRecieve(JSONClass recieve) {
+            this.recieve = recieve;
+        }
+
+        @Override
+        public abstract void run();
     }
 
     public static class TriggerConnectionRunner extends Thread {
@@ -186,7 +233,7 @@ public class MainActivity extends AppCompatActivity {
         @Override
         public void run() {
             try {
-                if (activity.getNetworkSocket() == null) {
+                if (activity.getNetworkSocket() == null || !activity.getNetworkSocket().isConnected()) {
                     // open connection (new socket)
                     Socket socket = new Socket();
                     socket.connect(new InetSocketAddress(MainActivity.IP, MainActivity.PORT), 2000);
@@ -195,14 +242,17 @@ public class MainActivity extends AppCompatActivity {
                     // close the connection
                     Socket socket = activity.getNetworkSocket();
                     DataOutputStream toServer = new DataOutputStream(socket.getOutputStream());
-                    toServer.writeBytes(String.format(activity.getRawJSON(R.raw.send_json), MSG_CLOSE));
+                    toServer.writeBytes(new Gson().toJson(new JSONClass(
+                            MainActivity.MODULE_NAME,
+                            MainActivity.MSG_CLOSE,
+                            new float[]{0f, 0f},
+                            new float[]{0f, 0f},
+                            new float[]{0f, 0f})));
                     activity.getNetworkSocket().close();
                     activity.setNetworkSocket(null);
                 }
 
-            } catch (UnknownHostException e) {
-                e.printStackTrace();
-            } catch (IOException e) {
+        } catch (IOException e) {
                 e.printStackTrace();
             }
 

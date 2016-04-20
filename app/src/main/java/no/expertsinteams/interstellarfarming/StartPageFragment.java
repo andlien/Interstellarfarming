@@ -30,7 +30,6 @@ import java.util.IllegalFormatCodePointException;
  */
 public class StartPageFragment extends Fragment {
 
-    private RequestQueue queue;
     private MainActivity activity;
 
     public static final String CONNECT = "Connect to server";

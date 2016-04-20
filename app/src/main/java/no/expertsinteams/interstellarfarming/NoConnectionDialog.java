@@ -14,6 +14,8 @@ import java.net.Socket;
  */
 public class NoConnectionDialog extends DialogFragment {
 
+    public static final String TAG = "no_connection_tag";
+
     public static NoConnectionDialog newInstance(Bundle bundle) {
         NoConnectionDialog fragment = new NoConnectionDialog();
         fragment.setArguments(bundle);
@@ -37,7 +39,9 @@ public class NoConnectionDialog extends DialogFragment {
                 new MainActivity.TriggerConnectionRunner((MainActivity) getActivity(), new Runnable() {
                     @Override
                     public void run() {
-                        NoConnectionDialog.newInstance(new Bundle()).show(activity.getSupportFragmentManager(), "TAG");
+                        if (activity.getNetworkSocket() == null || !activity.getNetworkSocket().isConnected()) {
+                            NoConnectionDialog.newInstance(new Bundle()).show(activity.getSupportFragmentManager(), TAG);
+                        }
                     }
                 }).start();
 
