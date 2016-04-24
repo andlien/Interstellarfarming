@@ -21,9 +21,29 @@
         android:layout_gravity="center_horizontal"
         android:text="Welcome to your personal MyFarm(TM) monitor.\nUse the navigation drawer to find the tractor." />
 
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content">
+
+        <EditText
+            android:id="@+id/ip_input"
+            android:layout_width="0dp"
+            android:layout_weight="1"
+            android:layout_height="wrap_content" />
+
+        <Button
+            android:id="@+id/save_ip"
+            android:text="Save ip"
+            android:layout_gravity="center_horizontal"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content" />
+
+    </LinearLayout>
+
     <Button
         android:text="Connect to server"
         android:id="@+id/setupConnection"
+        android:layout_gravity="center_horizontal"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content" />
 

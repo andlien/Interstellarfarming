@@ -2,27 +2,14 @@ package no.expertsinteams.interstellarfarming;
 
 
 import android.os.Bundle;
-import android.os.Handler;
 import android.support.v4.app.Fragment;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
+import android.widget.EditText;
 
-import com.android.volley.RequestQueue;
-
-import java.io.BufferedReader;
-import java.io.DataOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.io.Reader;
-import java.io.StringWriter;
-import java.io.Writer;
-import java.lang.reflect.AccessibleObject;
 import java.net.Socket;
-import java.net.UnknownHostException;
-import java.util.IllegalFormatCodePointException;
 
 
 /**
@@ -63,6 +50,18 @@ public class StartPageFragment extends Fragment {
         Socket mSocket = activity.getNetworkSocket();
 
         final Button button = (Button) getActivity().findViewById(R.id.setupConnection);
+        Button saveip = (Button) activity.findViewById(R.id.save_ip);
+
+        final EditText edit = (EditText) activity.findViewById(R.id.ip_input);
+        edit.setText(MainActivity.IP);
+
+        assert saveip != null;
+        saveip.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                MainActivity.IP = edit.getText().toString();
+            }
+        });
 
         button.setText(mSocket != null && mSocket.isConnected()? DISCONNECT : CONNECT);
 
@@ -76,9 +75,14 @@ public class StartPageFragment extends Fragment {
                             @Override
                             public void run() {
                                 Socket mSocket = activity.getNetworkSocket();
-                                button.setText(mSocket != null && mSocket.isConnected()? DISCONNECT : CONNECT);
+                                button.setText(mSocket != null && mSocket.isConnected() ? DISCONNECT : CONNECT);
                             }
                         });
+                    }
+                }, new Runnable() {
+                    @Override
+                    public void run() {
+
                     }
                 }).start();
 

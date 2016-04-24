@@ -2,8 +2,8 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@android:color/black"
-    tools:context="no.expertsinteams.interstellarfarming.StatusFragment">
+    tools:context="no.expertsinteams.interstellarfarming.StatusFragment"
+    android:background="@android:color/black">
 
     <LinearLayout
         android:layout_gravity="center_horizontal"
@@ -14,14 +14,16 @@
             android:id="@+id/stopOrResume"
             android:visibility="gone"
             android:tag="RUNNING"
-            android:layout_width="wrap_content"
+            android:layout_width="0dp"
+            android:layout_weight="1"
             android:layout_height="wrap_content" />
 
         <Button
             android:id="@+id/abort"
             android:visibility="gone"
             android:tag="RUNNING"
-            android:layout_width="wrap_content"
+            android:layout_width="0dp"
+            android:layout_weight="1"
             android:layout_height="wrap_content" />
 
     </LinearLayout>
@@ -31,20 +33,20 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:adjustViewBounds="true"
-        android:src="@drawable/interstellargard"
+        android:src="@drawable/farm"
         android:layout_gravity="center" />
     <View
         android:id="@+id/mTractor"
         android:visibility="gone"
         android:background="@drawable/tractor"
-        android:layout_width="20dp"
-        android:layout_height="20dp"/>
+        android:layout_width="12dp"
+        android:layout_height="12dp"/>
 
-    <ProgressBar
-        android:visibility="gone"
-        style="@style/Widget.AppCompat.ProgressBar.Horizontal"
-        android:id="@+id/show_progress"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content" />
+    <!--<ProgressBar-->
+        <!--android:visibility="gone"-->
+        <!--style="@android:style/Widget.ProgressBar.Large"-->
+        <!--android:id="@+id/show_progress"-->
+        <!--android:layout_width="40dp"-->
+        <!--android:layout_height="wrap_content" />-->
 
 </FrameLayout>

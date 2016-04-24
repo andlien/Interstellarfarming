@@ -15,17 +15,8 @@ import android.widget.ProgressBar;
 
 import com.google.gson.Gson;
 
-import java.io.BufferedReader;
-import java.io.DataOutputStream;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.io.Reader;
-import java.io.StringWriter;
-import java.io.Writer;
+import java.io.IOException;
 import java.net.Socket;
-import java.util.LinkedList;
-import java.util.Timer;
-import java.util.TimerTask;
 
 
 /**
@@ -33,22 +24,22 @@ import java.util.TimerTask;
  */
 public class StatusFragment extends Fragment {
 
-    public static final float speed = 4.0f;
-    public final int intervall = 500;
-
     public static final String RUNNING_TAG = "RUNNING";
-    public static final String PAUSED_TAG = "PAUSED";
     public static final String NOT_RUNNING_TAG = "NOT_RUNNING";
 
     private View tractor;
     private ImageView imageView;
-    private ProgressBar mProgressbar;
 
     private Button stopOrResume;
     private Button abort;
 
     private Gson gson;
-    private Handler handler;
+    Handler handler;
+
+    float oldX;
+    float oldY;
+
+    private boolean first = true;
 
     public static StatusFragment newInstance(Bundle args) {
         StatusFragment fragment = new StatusFragment();
@@ -74,33 +65,63 @@ public class StatusFragment extends Fragment {
                 @Override
                 public void run() {
                     final JSONClass recv = getRecieve();
-                    tractor.post(new Runnable() {
-                        @Override
-                        public void run() {
-                            tractor.setX(recv.area[0]);
-                            tractor.setY(recv.area[1]);
+                    if (recv != null) {
+                        tractor.post(new Runnable() {
+                            @Override
+                            public void run() {
+                                if (!(tractor.getX() == 0f && tractor.getY() == 0f) &&
+                                        (oldX != recv.area[0] || oldY != recv.area[1])) {
+                                    System.out.println("IAM RUNNING");
+                                    stopOrResume.setTag(RUNNING_TAG);
 
-                            mProgressbar.setProgress((int) recv.waypoints_x[0]);
+                                    tractor.setX(recv.area[0] * imageView.getWidth() + imageView.getX());
+                                    tractor.setY(recv.area[1] * imageView.getHeight() + imageView.getY());
+                                } else if (tractor.getX() == 0f && tractor.getY() == 0f) {
+                                    tractor.setX(recv.area[0] * imageView.getWidth() + imageView.getX());
+                                    tractor.setY(recv.area[1] * imageView.getHeight() + imageView.getY());
+                                } else {
+                                    System.out.println("IAM NOT RUNNING");
+                                    stopOrResume.setTag(NOT_RUNNING_TAG);
+                                }
+
+                                oldX = recv.area[0];
+                                oldY = recv.area[1];
+
+                                tractor.setVisibility(View.VISIBLE);
+
+                                handler.post(updateTractorPosition);
+                            }
+                        });
+
+                    } else {
+                        System.out.println("SERVER CLOSED");
+                        Socket socket = ((MainActivity) getActivity()).getNetworkSocket();
+                        try {
+                            socket.close();
+                        } catch (IOException e) {
+                            e.printStackTrace();
                         }
-                    });
+                        socket = null;
+                    }
                 }
-            });
-
-            //run again in <intervall>ms
-            handler.postDelayed(updateTractorPosition, intervall);
+            }).start();
         }
     };
 
     Runnable checkConnection = new Runnable() {
         @Override
         public void run() {
-            Socket mSocket = ((MainActivity) getActivity()).getNetworkSocket();
-            if (mSocket == null || !mSocket.isConnected()) {
-                NoConnectionDialog.newInstance(new Bundle()).show(getFragmentManager(), NoConnectionDialog.TAG);
-            }
-
             // check every 5 seconds
             handler.postDelayed(checkConnection, 5000);
+
+            Socket mSocket = ((MainActivity) getActivity()).getNetworkSocket();
+            if (mSocket == null || !mSocket.isConnected()) {
+                handler.removeCallbacksAndMessages(null);
+                NoConnectionDialog dialog = NoConnectionDialog.newInstance(new Bundle());
+                dialog.setTargetFragment(StatusFragment.this, -1);
+                dialog.show(getFragmentManager(), NoConnectionDialog.TAG);
+            }
+
         }
     };
 
@@ -115,65 +136,67 @@ public class StatusFragment extends Fragment {
 
         final MainActivity activity = (MainActivity) getActivity();
 
-        checkConnection.run();
-
-        mProgressbar = (ProgressBar) root.findViewById(R.id.show_progress);
 
         imageView = (ImageView) root.findViewById(R.id.farm_image);
         tractor = root.findViewById(R.id.mTractor);
+        stopOrResume = (Button) root.findViewById(R.id.stopOrResume);
+        abort = (Button) root.findViewById(R.id.abort);
+
+        stopOrResume.setTag(NOT_RUNNING_TAG);
 
         imageView.setOnTouchListener(new View.OnTouchListener() {
             @Override
-            public boolean onTouch(View v, MotionEvent event) {
+            public boolean onTouch(View v, final MotionEvent event) {
 
-                if (event.getAction() == MotionEvent.ACTION_UP) {
+                if (event.getAction() == MotionEvent.ACTION_UP &&
+                        !stopOrResume.getTag().equals(RUNNING_TAG)) {
 
-                    mProgressbar.setVisibility(View.VISIBLE);
                     tractor.setVisibility(View.VISIBLE);
                     stopOrResume.setVisibility(View.VISIBLE);
                     abort.setVisibility(View.VISIBLE);
 
-                    stopOrResume.setText("Pause");
-                    abort.setText("Abort");
-                    stopOrResume.setTag(RUNNING_TAG);
-                    abort.setTag(RUNNING_TAG);
-
-                    mProgressbar.setX(event.getX());
-                    mProgressbar.setY(event.getY());
-
-                    updateTractorPosition.run();
+                    System.out.println("Sent START: x=" + event.getX() / imageView.getWidth() + " and y=" + event.getY() / imageView.getHeight());
 
                     new MainActivity.SendStringRunner(activity.getNetworkSocket(),
                             gson.toJson(new JSONClass(
                                     MainActivity.MODULE_NAME,
                                     MainActivity.MSG_START,
-                                    new float[]{event.getX(), event.getY()},
+                                    new float[]{event.getX() / imageView.getWidth(), event.getY() / imageView.getHeight()},
                                     new float[]{0f, 0f},
                                     new float[]{0f, 0f}))).start();
 
 
-                    return true;
                 }
-                return false;
+                return true;
             }
         });
 
-        stopOrResume = (Button) root.findViewById(R.id.stopOrResume);
-        abort = (Button) root.findViewById(R.id.abort);
+        stopOrResume.setText("Pause/Resume");
+        abort.setText("Abort");
 
         if (!stopOrResume.hasOnClickListeners()) {
             stopOrResume.setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View v) {
-                    handler.removeCallbacks(updateTractorPosition);
-                    stopOrResume.setTag(PAUSED_TAG);
-                    new MainActivity.SendStringRunner(activity.getNetworkSocket(),
-                            gson.toJson(new JSONClass(
-                                    MainActivity.MODULE_NAME,
-                                    MainActivity.MSG_STOP,
-                                    new float[]{0f, 0f},
-                                    new float[]{0f, 0f},
-                                    new float[]{0f, 0f}))).start();
+                    System.out.println("Pressed stopOrResume, Tag=" + stopOrResume.getTag());
+                    if (stopOrResume.getTag().equals(RUNNING_TAG)) {
+                        new MainActivity.SendStringRunner(activity.getNetworkSocket(),
+                                gson.toJson(new JSONClass(
+                                        MainActivity.MODULE_NAME,
+                                        MainActivity.MSG_STOP,
+                                        new float[]{0f, 0f},
+                                        new float[]{0f, 0f},
+                                        new float[]{0f, 0f}))).start();
+                    } else {
+                        new MainActivity.SendStringRunner(activity.getNetworkSocket(),
+                                gson.toJson(new JSONClass(
+                                        MainActivity.MODULE_NAME,
+                                        MainActivity.MSG_RESUME,
+                                        new float[]{0f, 0f},
+                                        new float[]{0f, 0f},
+                                        new float[]{0f, 0f}))).start();
+                    }
+
                 }
             });
         }
@@ -182,8 +205,6 @@ public class StatusFragment extends Fragment {
             abort.setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View v) {
-                    handler.removeCallbacks(updateTractorPosition);
-                    abort.setTag(NOT_RUNNING_TAG);
                     new MainActivity.SendStringRunner(activity.getNetworkSocket(),
                             gson.toJson(new JSONClass(
                                     MainActivity.MODULE_NAME,
@@ -193,6 +214,12 @@ public class StatusFragment extends Fragment {
                                     new float[]{0f, 0f}))).start();
                 }
             });
+        }
+
+        handler.post(checkConnection);
+
+        if (activity.getNetworkSocket() != null && activity.getNetworkSocket().isConnected()) {
+            handler.post(updateTractorPosition);
         }
 
         if (savedInstanceState != null) {
@@ -219,6 +246,6 @@ public class StatusFragment extends Fragment {
     @Override
     public void onDestroy() {
         super.onDestroy();
-        handler.removeCallbacks(null);
+        handler.removeCallbacksAndMessages(null);
     }
 }

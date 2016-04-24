@@ -6,6 +6,7 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.support.v4.app.DialogFragment;
 import android.support.v7.app.AlertDialog;
+import android.widget.Toast;
 
 import java.net.Socket;
 
@@ -32,20 +33,30 @@ public class NoConnectionDialog extends DialogFragment {
             dismiss();
         }
 
-        builder.setTitle("No connection to server on " + MainActivity.IP + ":" +MainActivity.PORT);
+        builder.setTitle("Still no connection to server on " + MainActivity.IP + ":" +MainActivity.PORT);
         builder.setPositiveButton("Retry", new DialogInterface.OnClickListener() {
             @Override
             public void onClick(final DialogInterface dialogInterface, int i) {
+                dismiss();
                 new MainActivity.TriggerConnectionRunner((MainActivity) getActivity(), new Runnable() {
                     @Override
                     public void run() {
-                        if (activity.getNetworkSocket() == null || !activity.getNetworkSocket().isConnected()) {
-                            NoConnectionDialog.newInstance(new Bundle()).show(activity.getSupportFragmentManager(), TAG);
-                        }
+                        activity.runOnUiThread(new Runnable() {
+                            @Override
+                            public void run() {
+                                StatusFragment fr = ((StatusFragment) getTargetFragment());
+                                fr.handler.post(fr.updateTractorPosition);
+                                fr.handler.post(fr.checkConnection);
+                            }
+                        });
+                    }
+                }, new Runnable() {
+                    @Override
+                    public void run() {
+                        ((StatusFragment) getTargetFragment()).handler.post(((StatusFragment) getTargetFragment()).checkConnection);
                     }
                 }).start();
 
-                dismiss();
 
             }
         });

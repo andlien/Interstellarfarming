@@ -12,6 +12,7 @@ import android.support.v7.widget.GridLayout;
 import android.support.v7.widget.Toolbar;
 import android.view.Gravity;
 import android.view.MenuItem;
+import android.widget.EditText;
 
 import com.google.gson.Gson;
 
@@ -20,6 +21,7 @@ import java.io.DataOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.io.InterruptedIOException;
 import java.io.Reader;
 import java.io.StringWriter;
 import java.io.UnsupportedEncodingException;
@@ -30,8 +32,8 @@ import java.net.UnknownHostException;
 
 public class MainActivity extends AppCompatActivity {
 
-    public static final String IP = "10.22.68.50";
-    public static final int PORT = 9191;
+    public static String IP = "10.22.71.122";
+    public static int PORT = 9191;
 
     public static final String MODULE_NAME = "app";
 
@@ -143,6 +145,11 @@ public class MainActivity extends AppCompatActivity {
                 public void run() {
 
                 }
+            }, new Runnable() {
+                @Override
+                public void run() {
+
+                }
             }).start();
         }
     }
@@ -189,12 +196,9 @@ public class MainActivity extends AppCompatActivity {
             try {
                 fromServer = new BufferedReader(new InputStreamReader(socket.getInputStream()));
 
-                StringBuilder everything = new StringBuilder();
-                String line;
-                while( (line = fromServer.readLine()) != null) {
-                    everything.append(line);
-                }
-                callback.setRecieve(new Gson().fromJson(everything.toString(), JSONClass.class));
+                String line = fromServer.readLine();
+                JSONClass a = new Gson().fromJson(line, JSONClass.class);
+                callback.setRecieve(a);
 
             } catch (IOException e) {
                 e.printStackTrace();
@@ -224,10 +228,12 @@ public class MainActivity extends AppCompatActivity {
 
         MainActivity activity;
         Runnable callback;
+        Runnable error;
 
-        public TriggerConnectionRunner(MainActivity activity, Runnable callback) {
+        public TriggerConnectionRunner(MainActivity activity, Runnable callback, Runnable error) {
             this.activity = activity;
             this.callback = callback;
+            this.error = error;
         }
 
         @Override
@@ -236,7 +242,7 @@ public class MainActivity extends AppCompatActivity {
                 if (activity.getNetworkSocket() == null || !activity.getNetworkSocket().isConnected()) {
                     // open connection (new socket)
                     Socket socket = new Socket();
-                    socket.connect(new InetSocketAddress(MainActivity.IP, MainActivity.PORT), 2000);
+                    socket.connect(new InetSocketAddress(MainActivity.IP, MainActivity.PORT), 1000);
                     activity.setNetworkSocket(socket);
                 } else if (activity.getNetworkSocket().isConnected()) {
                     // close the connection
@@ -253,7 +259,8 @@ public class MainActivity extends AppCompatActivity {
                 }
 
         } catch (IOException e) {
-                e.printStackTrace();
+                error.run();
+                return;
             }
 
             callback.run();
