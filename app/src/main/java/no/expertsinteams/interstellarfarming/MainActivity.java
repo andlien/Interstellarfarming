@@ -42,9 +42,6 @@ public class MainActivity extends AppCompatActivity {
     public static final String MSG_ABORT = "abort";
     public static final String MSG_RESUME = "resume";
     public static final String MSG_STOP = "stop";
-    public static final String MSG_STATUS = "getstatus";
-
-    private GridLayout gridView;
 
     private Socket networkSocket;
     public NavigationView navigation;
@@ -116,25 +113,6 @@ public class MainActivity extends AppCompatActivity {
         return networkSocket;
     }
 
-    public String getRawJSON(int id) {
-        InputStream is = getResources().openRawResource(R.raw.send_json);
-        Writer writer = new StringWriter();
-        char[] buffer = new char[1024];
-        try {
-            Reader reader = new BufferedReader(new InputStreamReader(is, "UTF-8"));
-            int n;
-            while ((n = reader.read(buffer)) != -1) {
-                writer.write(buffer, 0, n);
-            }
-        } catch (UnsupportedEncodingException e) {
-            e.printStackTrace();
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-
-        return writer.toString();
-    }
-
     @Override
     protected void onDestroy() {
         super.onDestroy();
@@ -167,11 +145,10 @@ public class MainActivity extends AppCompatActivity {
         @Override
         public void run() {
             DataOutputStream toServer = null;
+            if (socket == null || !socket.isConnected()) {
+                return;
+            }
             try {
-//                System.out.println(string);
-//                if (socket.isClosed()) {
-//                    throw new RuntimeException();
-//                }
                 toServer = new DataOutputStream(socket.getOutputStream());
                 toServer.writeBytes(string);
             } catch (IOException e) {
@@ -193,6 +170,10 @@ public class MainActivity extends AppCompatActivity {
         @Override
         public void run() {
             BufferedReader fromServer = null;
+            if (socket == null || !socket.isConnected()) {
+                callback.run();
+                return;
+            }
             try {
                 fromServer = new BufferedReader(new InputStreamReader(socket.getInputStream()));
 

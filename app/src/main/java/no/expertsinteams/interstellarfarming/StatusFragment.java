@@ -8,10 +8,10 @@ import android.view.LayoutInflater;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.WindowManager;
 import android.widget.Button;
 import android.widget.FrameLayout;
 import android.widget.ImageView;
-import android.widget.ProgressBar;
 
 import com.google.gson.Gson;
 
@@ -61,6 +61,7 @@ public class StatusFragment extends Fragment {
     Runnable updateTractorPosition = new Runnable() {
         @Override
         public void run() {
+            final MainActivity activity = ((MainActivity)getActivity());
             new MainActivity.RecieveStringRunner(((MainActivity) getActivity()).getNetworkSocket(), new MainActivity.RecieveStringListener() {
                 @Override
                 public void run() {
@@ -72,7 +73,15 @@ public class StatusFragment extends Fragment {
                                 if (!(tractor.getX() == 0f && tractor.getY() == 0f) &&
                                         (oldX != recv.area[0] || oldY != recv.area[1])) {
                                     System.out.println("IAM RUNNING");
+
+                                    if (stopOrResume.getTag().equals(NOT_RUNNING_TAG)) {
+                                        System.out.println("ADDING KEEP SCREEN ON");
+                                        getActivity().getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
+                                    }
                                     stopOrResume.setTag(RUNNING_TAG);
+
+                                    stopOrResume.setVisibility(View.VISIBLE);
+                                    abort.setVisibility(View.VISIBLE);
 
                                     tractor.setX(recv.area[0] * imageView.getWidth() + imageView.getX());
                                     tractor.setY(recv.area[1] * imageView.getHeight() + imageView.getY());
@@ -80,6 +89,12 @@ public class StatusFragment extends Fragment {
                                     tractor.setX(recv.area[0] * imageView.getWidth() + imageView.getX());
                                     tractor.setY(recv.area[1] * imageView.getHeight() + imageView.getY());
                                 } else {
+
+                                    if (stopOrResume.getTag().equals(RUNNING_TAG)) {
+                                        System.out.println("CLEARING KEEP SCREEN ON");
+                                        getActivity().getWindow().clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
+                                    }
+
                                     System.out.println("IAM NOT RUNNING");
                                     stopOrResume.setTag(NOT_RUNNING_TAG);
                                 }
@@ -94,14 +109,15 @@ public class StatusFragment extends Fragment {
                         });
 
                     } else {
-                        System.out.println("SERVER CLOSED");
-                        Socket socket = ((MainActivity) getActivity()).getNetworkSocket();
-                        try {
-                            socket.close();
-                        } catch (IOException e) {
-                            e.printStackTrace();
+                        Socket socket = activity.getNetworkSocket();
+                        if (socket != null) {
+                            try {
+                                socket.close();
+                            } catch (IOException e) {
+                                e.printStackTrace();
+                            }
+                            activity.setNetworkSocket(null);
                         }
-                        socket = null;
                     }
                 }
             }).start();
@@ -136,13 +152,10 @@ public class StatusFragment extends Fragment {
 
         final MainActivity activity = (MainActivity) getActivity();
 
-
         imageView = (ImageView) root.findViewById(R.id.farm_image);
         tractor = root.findViewById(R.id.mTractor);
         stopOrResume = (Button) root.findViewById(R.id.stopOrResume);
         abort = (Button) root.findViewById(R.id.abort);
-
-        stopOrResume.setTag(NOT_RUNNING_TAG);
 
         imageView.setOnTouchListener(new View.OnTouchListener() {
             @Override
@@ -152,8 +165,6 @@ public class StatusFragment extends Fragment {
                         !stopOrResume.getTag().equals(RUNNING_TAG)) {
 
                     tractor.setVisibility(View.VISIBLE);
-                    stopOrResume.setVisibility(View.VISIBLE);
-                    abort.setVisibility(View.VISIBLE);
 
                     System.out.println("Sent START: x=" + event.getX() / imageView.getWidth() + " and y=" + event.getY() / imageView.getHeight());
 
@@ -171,8 +182,11 @@ public class StatusFragment extends Fragment {
             }
         });
 
+        stopOrResume.setTag(NOT_RUNNING_TAG);
         stopOrResume.setText("Pause/Resume");
         abort.setText("Abort");
+        stopOrResume.setVisibility(View.VISIBLE);
+        abort.setVisibility(View.VISIBLE);
 
         if (!stopOrResume.hasOnClickListeners()) {
             stopOrResume.setOnClickListener(new View.OnClickListener() {
